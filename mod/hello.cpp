@@ -10,7 +10,7 @@ unsigned oldTimerOFF, oldTimerSEG;
 void interrupt timer();
 
 PCB *p[3];
-PCB* running;
+//PCB* running;
 
 int nextThread;
 
@@ -165,7 +165,7 @@ void interrupt timer(){
 			mov sp, tsp
 			mov ss, tss
 		}
-}
+	}
 
 	// poziv stare prekidne rutine
 	// koja se nalazila na 08h, a sad je na 60h;
@@ -250,13 +250,16 @@ void doSomething(){
 
 int main(){
 
-	initTimer();
+	//initTimer();
 
-	doSomething();
+	//doSomething();
 
-	restore();
+	//restore();
 
-	return 0;
+	//return 0;
+
+	// Testiranje Thread
+
 
 }
 
