@@ -1,3 +1,3 @@
-set PathName="C:\git\os1proj\workspace\mod\BCC"
+set PathName="C:\Users\OS1\git\mod\BCC"
 cd %PathName%
 mod.exe 

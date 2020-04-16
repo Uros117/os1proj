@@ -1,10 +1,3 @@
-/*
- * PCB.h
- *
- *  Created on: Mar 5, 2020
- *      Author: OS1
- */
-
 #ifndef PCB_H_
 #define PCB_H_
 #include "macros.h"
@@ -13,19 +6,28 @@
 class PCB {
 private:
 	friend Thread;
-	static ID idcnt;
+	volatile static ID idcnt;
+
 public:
-	unsigned sp;
-	unsigned ss;
-	StackSize size;
-	unsigned* stack;
-	unsigned finished;// Posle moze da bude state(enum)
-	ID id;
-	Time quantum;
-	PCB();
-	PCB(int size, void (*body)());
-	PCB(StackSize size, Time quantum, void (Thread::*body)(), void (Thread::*exitFun)());
+	static volatile PCB* running;
+	static volatile PCB* mainPCB;
+
+	volatile unsigned sp;
+	volatile unsigned ss;
+	volatile unsigned bp;
+
+	volatile StackSize size;
+	volatile unsigned* stack;
+	volatile unsigned finished;
+	volatile Thread* threadPointer;
+	volatile ID id;
+	volatile Time quantum;
+	PCB();// Konstruktor za MAIN thread
+	PCB(StackSize size, Time quantum, void(*body)());// Konstruktor za threadove bez objekta
+	PCB(StackSize size, Time quantum, Thread* thread);// konstruktor za threadove
 	virtual ~PCB();
+
+	static void wrapper();
 
 };
 

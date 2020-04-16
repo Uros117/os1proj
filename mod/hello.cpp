@@ -1,75 +1,24 @@
 #include <iostream.h>
-#include <DOS.H>
-#include <stdio.h>
-
-#include "PCB.h"
+//#include <DOS.H>
+//#include <stdio.h>
 #include "macros.h"
+#include "PCB.h"
 #include "SCHEDULE.H"
+#include "thread.h"
+#include "ThreadA.h"
+
 unsigned oldTimerOFF, oldTimerSEG;
 
 void interrupt timer();
 
-PCB *p[3];
-//PCB* running;
-
 int nextThread;
 
 unsigned int tsp;
-// zabranjeno ime za asembler je seg
 unsigned int tss;
+unsigned int tbp;
 
-//makro
-/*#define dispatch(x) { \
-	nextThread = x; \
-	_dispatch(); \
- }*/
-
-/*void _dispatch() {
-	lock
-	asm {
-		push ax
-		push bx
-		push cx
-		push dx
-
-		push si
-		push di
-		push bp
-		push ds
-		push es
-
-		mov tsp, sp
-		mov tss, ss
-	}
-
-	running->sp = tsp;
-	running->ss = tss;
-
-	Scheduler::put(running);
-	running = Scheduler::get();
-	//running = p[nextThread];
-
-
-	tsp = running->sp;
-	tss = running->ss;
-	asm {
-		mov sp, tsp
-		mov ss, tss
-
-		pop es
-		pop ds
-		pop bp
-		pop di
-		pop si
-
-		pop dx
-		pop cx
-		pop bx
-		pop ax
-	}
-	unlock
-}*/
-
+volatile PCB* PCB::running;
+volatile PCB* PCB::mainPCB;
 
 void initTimer(){
 	lock
@@ -105,7 +54,7 @@ void restore(){
 		push es
 		push ax
 
-		mov ax, 0;
+		mov ax, 0
 		mov es, ax
 
 		mov ax, word ptr oldTimerSEG
@@ -122,8 +71,8 @@ void restore(){
 
 volatile int cntr = 20;
 volatile int context_switch_on_demand = 0;
-
-// sinhrona promena konteksta
+volatile int context_switch_without_return = 0;
+// Sinhrona promena konteksta
 void dispatch(){
 	lock
 	context_switch_on_demand = 1;
@@ -131,156 +80,157 @@ void dispatch(){
 	unlock
 }
 
-// poslednja funkcija koju svaka nit mora da pozove
-// - zasto?
 void exitThread(){
-	running->finished = 1;
+	PCB::running->finished = 1;
 	dispatch();
 }
 
+void suspend(){
+	lock
+	context_switch_without_return = 1;
+	dispatch();
+	unlock
+}
+
+void put(PCB* pcb){
+	Scheduler::put(pcb);
+}
 
 void interrupt timer(){
-	//timer nije locked ?
-	//cout << " " << cntr;
 	if (!context_switch_on_demand) cntr--;
 	if (cntr <= 0 || context_switch_on_demand) {
-		cout << running->id << " -> ";
+#ifdef DEBUG
+		cout << PCB::running->id << " -> ";
+#endif
 		asm {
 			mov tsp, sp
 			mov tss, ss
+			mov tbp, bp
 		}
-		running->sp = tsp;
-		running->ss = tss;
-		if(running->finished != 1){
-			Scheduler::put(running);
-		}
-		running = Scheduler::get();
-		//running = p[nextThread];
-		cout << running->id << endl;
+		PCB::running->sp = tsp;
+		PCB::running->ss = tss;
+		PCB::running->bp = tbp;
 
-		tsp = running->sp;
-		tss = running->ss;
-		cntr = running->quantum;
+		if(PCB::running->finished != 1) {
+			if(context_switch_without_return == 0){
+				Scheduler::put((PCB*)PCB::running);
+			}
+		};
+		PCB::running = Scheduler::get();
+
+		// Ako nema vise thread-ova u Scheduler-u
+		// posavi aktivan thread na main thread
+		// gde je HALT
+		if (PCB::running == 0){
+#ifdef DEBUG_V
+			cout << "Thread queue is empty! ";
+#endif
+			PCB::running = PCB::mainPCB;
+		}
+
+		// Ispisi promenu
+#ifdef DEBUG
+		cout << PCB::running->id << endl;
+#endif
+
+#ifdef DEBUG_V
+		if(PCB::running->threadPointer != NULL)
+			cout << "Thread " << PCB::running->threadPointer->getId() << endl;
+#endif
+		tsp = PCB::running->sp;
+		tss = PCB::running->ss;
+		tbp = PCB::running->bp;
+
+		cntr = PCB::running->quantum;
 		asm {
 			mov sp, tsp
 			mov ss, tss
+			mov bp, tbp
 		}
 	}
 
-	// poziv stare prekidne rutine
-	// koja se nalazila na 08h, a sad je na 60h;
-	// poziva se samo kada
-	// nije zahtevana promena konteksta
-	// tako da se stara rutina poziva
-	// samo kada je stvarno doslo do prekida
+	// Prosledjivanje prekida DOS-u
 	if(!context_switch_on_demand) asm int 60h;
 
+	context_switch_without_return = 0;
 	context_switch_on_demand = 0;
 }
 
-
-void a(){
-	for (int i =0; i < 30; ++i) {
-		unsigned long j = 0;
-		lock
-		cout<<"u a() i = "<< i <<endl;
-		unlock
-
-		while (j < 999999999l){
-			j++;
-		}
-	}
-	exitThread();
-}
-
-void b(){
-	for (int i =0; i < 30; ++i) {
-		unsigned long j = 0;
-		lock
-		cout<<"u b() i = "<< i <<endl;
-		unlock
-
-		while (j < 999999999l){
-			j++;
-		}
-	}
-	exitThread();
-}
-
-
-void delete_all() {
-	//delete [] p[1]->stack;
-	//delete [] p[2]->stack;
-	delete p[0];
-	delete p[1];
-	delete p[2];
-}
-
-
-void doSomething(){
-	int i=0;
-	lock
-	p[1] = new PCB(1024, &a);
-	cout<<"Napravio a"<<endl;
-	p[1]->quantum = 20;
-
-	p[2] = new PCB(1024, &b);
-	cout<<"Napravio b"<<endl;
-	p[2]->quantum = 20;
-
-	p[0] = new PCB();
-	p[0]->quantum = 20;
-	running = p[0];
-
-	Scheduler::put(p[1]);
-	Scheduler::put(p[2]);
-	unlock
-
-	for (i=0; i < 30; ++i) {
-		unsigned long j = 0;
-		lock
-		cout<<"main "<<i<<endl;
-		unlock
-		while (j < 9999999999l){
-			j++;
-		}
-	}
-	cout<<"Srecan kraj!"<<endl;
-}
+int haltLoop = 1;
 
 int main(){
+	lock
 
-	//initTimer();
+#ifdef DEBUG
+	cout << "Hello world!" << endl;
+#endif
 
-	//doSomething();
+	unsigned long i = 0;
+	initTimer();
+	PCB::mainPCB = new PCB();
+	PCB::running = PCB::mainPCB;
+	ThreadA* ta = new ThreadA();
+	ThreadA* tb = new ThreadA();
+	ta->start();
+	tb->start();
 
-	//restore();
+	unlock
 
-	//return 0;
+	//tb->waitToComplete();
+	suspend();
 
-	// Testiranje Thread
+	while(haltLoop){
+		unsigned long j = 0;
+		lock
+		cout<<"u main() i = "<< i <<endl;
+		unlock
+		while (j < 999999999l)
+			j++;
+		i++;
+	}
 
-
+	lock
+#ifdef DEBUG
+	cout << "RESTORE" << endl;
+#endif
+	restore();
+	unlock
 }
 
 
-/*int main() {
-	//cout << sizeof(unsigned short) << endl;
-	//cout << sizeof(unsigned int) << endl;
-	//cout << sizeof(void (*)()) << endl;
 
-    p[1] = new PCB(1024, &a);
-	//createThread(p[1], &a);
-	cout << "napravio a" << endl;
+/*
+	lock
+	//unsigned long i = 0;
+	cout << "Hello world!" << endl;
 
-	p[2] = new PCB(1024, &b);
-	//createThread(p[2], &b);
-	cout << "napravio b" << endl;
+	mainPCB = new PCB();
+	running = mainPCB;
 
-	p[0] = new PCB();
-	running = p[0];
+	initTimer();
+	ThreadA* ta = new ThreadA();
+	unlock
 
-	cout << "kraj" << endl;
-	delete_all();
-	return 0;
-}*/
+	ta->start();
+
+
+	// HALT
+	while(haltLoop){
+		unsigned long j = 0;
+		lock
+		cout<<"u main() i = "<< i <<endl;
+		unlock
+
+		while (j < 99999999l){
+			j++;
+		}
+	}
+
+	lock
+	restore();
+	threadLista->brisiSve();
+	delete mainPCB;
+
+	cout<<"end"<< endl;
+	unlock
+ */

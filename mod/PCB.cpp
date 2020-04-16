@@ -1,24 +1,27 @@
-/*
- * PCB.cpp
- *
- *  Created on: Mar 5, 2020
- *      Author: OS1
- */
+#include "hello.h"
 #include <iostream.h>
-//#include <dos.h>
 #include "PCB.h"
 #include "macros.h"
 #include "thread.h"
 
-unsigned PCB::idcnt = 0;
 
-PCB::PCB() : stack(NULL), size(0), sp(0), ss(0), quantum(20), finished(0), id(idcnt) {
+volatile ID PCB::idcnt = 1;
+
+PCB::PCB() : stack(NULL), size(0), sp(0), ss(0), quantum(20), finished(0), id(idcnt), threadPointer(NULL) {
+	lock
 	idcnt ++;
+	unlock
 }
 
-PCB::PCB(int size, void (*body)()) : size(size), quantum(20), finished(0), id(idcnt) {
+PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL){
+	lock
 	idcnt ++;
 	stack = new unsigned [size];
+
+	// Postavljanje PSW-a
+	stack[size - 1] = 0x200;
+
+
 	sp = FP_OFF(stack);
 	ss = FP_SEG(stack);
 
@@ -26,35 +29,76 @@ PCB::PCB(int size, void (*body)()) : size(size), quantum(20), finished(0), id(id
 	unsigned int newCS = FP_SEG(body);
 	stack[size - 2] = newCS;
 	stack[size - 3] = newPC;
-	sp = FP_OFF(stack + size - 14);
+
+	sp = FP_OFF(stack + size - 12);
+	ss = FP_SEG(stack + size - 12);
+
+	bp = FP_OFF(stack + size - 12);
+
+	finished = 0;
+	unlock
 }
 
-PCB::PCB(StackSize size, Time quantum, void (Thread::*body)(), void (Thread::*exitFun)()) : size(size), quantum(quantum), finished(0), id(idcnt) {
+PCB::PCB(StackSize size, Time quantum, Thread* thread) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL) {
+	lock
 	idcnt ++;
 	stack = new unsigned [size];
-	sp = FP_OFF(stack);
-	ss = FP_SEG(stack);
 
-	//Podmetanje exit funkcije
-	unsigned int newPC = FP_OFF((void(*)())exitFun);
-	unsigned int newCS = FP_SEG((void(*)())exitFun);
-	stack[size - 1] = newCS;
-	stack[size - 2] = newPC;
+	// Postavljanje PSW-a
+	stack[size - 1] = 0x200;
 
-	newPC = FP_OFF(body);
-	newCS = FP_SEG(body);
-	stack[size - 4] = newCS;
-	stack[size - 5] = newPC;
+	unsigned int newPC = FP_OFF(&PCB::wrapper);
+	unsigned int newCS = FP_SEG(&PCB::wrapper);
+	stack[size - 2] = newCS;
+	stack[size - 3] = newPC;
+
 	sp = FP_OFF(stack + size - 12);
+	ss = FP_SEG(stack + size - 12);
+
+	bp = FP_OFF(stack + size - 12);
+	//stack[size - 12] = bp;// Ja sam dodao jer se popuje bp
+
+	finished = 0;
+	this->threadPointer = thread;
+	unlock
 }
+/*
+lock
+idcnt ++;
+stack = new unsigned [size];
+sp = FP_OFF(stack);
+ss = FP_SEG(stack);
+
+unsigned int newPC = FP_OFF(&entryPoint);
+unsigned int newCS = FP_SEG(&entryPoint);
+//stack[size - 1] = 512;
+stack[size - 2] = newCS;
+stack[size - 3] = newPC;
+//stack[size - 13] = 512;
+sp = FP_OFF(stack + size - 12);// Bilo 13 zbog novog lock unlock
+unlock*/
 
 PCB::~PCB() {
 	if (stack != NULL)
-		delete[] stack;
+		delete[] (void*)stack;
 	/*size = 0;
 	sp = 0;
 	ss = 0;
 	quantum = 20;
 	finished = 0;*/
 }
+
+void PCB::wrapper(){
+	running->threadPointer->run();
+
+	lock
+	cout << "THREAD FINNISHED" << endl;
+	unlock
+
+	//EXIT CODE
+	lock
+	running->threadPointer->waitList->putAll();
+	exitThread();
+	unlock
+};
 
