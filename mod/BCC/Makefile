@@ -1,4 +1,4 @@
-SRC = ..\*.cpp 
+SRC = ..\Test\*.cpp ..\*.cpp 
 INCLUDES = ..\INCLUDE\*.h 
 LIBS = ..\LIB\*.lib 
 INCLUDEPATH = C:/bc31\include;..\INCLUDE;

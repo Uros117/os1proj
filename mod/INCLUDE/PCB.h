@@ -9,12 +9,14 @@ private:
 	volatile static ID idcnt;
 
 public:
+	// Context switch
 	static volatile PCB* running;
-	static volatile PCB* mainPCB;
+	static volatile PCB* idlePCB;
 
 	volatile unsigned sp;
 	volatile unsigned ss;
 	volatile unsigned bp;
+
 
 	volatile StackSize size;
 	volatile unsigned* stack;
@@ -22,10 +24,17 @@ public:
 	volatile Thread* threadPointer;
 	volatile ID id;
 	volatile Time quantum;
+
+	// Semaphore
+	volatile int lastTimeUnbockedMsg;
+
+	//
+	volatile int lockFlag;
+
 	PCB();// Konstruktor za MAIN thread
 	PCB(StackSize size, Time quantum, void(*body)());// Konstruktor za threadove bez objekta
 	PCB(StackSize size, Time quantum, Thread* thread);// konstruktor za threadove
-	virtual ~PCB();
+	~PCB();
 
 	static void wrapper();
 

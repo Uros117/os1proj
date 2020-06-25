@@ -24,7 +24,6 @@ public:
 protected:
 	friend class PCB;
 	friend void entryPoint();
-	friend main();
 
 	Thread (StackSize stackSize = defaultStackSize, Time timeSlice = defaultTimeSlice);
 	virtual void run() {};
@@ -36,5 +35,4 @@ private:
 	volatile PCBList* waitList;
 };
 
-void entryPoint();
 #endif

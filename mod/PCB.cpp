@@ -7,13 +7,13 @@
 
 volatile ID PCB::idcnt = 1;
 
-PCB::PCB() : stack(NULL), size(0), sp(0), ss(0), quantum(20), finished(0), id(idcnt), threadPointer(NULL) {
+PCB::PCB() : stack(NULL), size(0), sp(0), ss(0), quantum(20), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(-1), lockFlag(0) {
 	lock
 	idcnt ++;
 	unlock
 }
 
-PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL){
+PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(-1), lockFlag(0) {
 	lock
 	idcnt ++;
 	stack = new unsigned [size];
@@ -22,8 +22,8 @@ PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quan
 	stack[size - 1] = 0x200;
 
 
-	sp = FP_OFF(stack);
-	ss = FP_SEG(stack);
+	//sp = FP_OFF(stack);
+	//ss = FP_SEG(stack);
 
 	unsigned int newPC = FP_OFF(body);
 	unsigned int newCS = FP_SEG(body);
@@ -39,7 +39,7 @@ PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quan
 	unlock
 }
 
-PCB::PCB(StackSize size, Time quantum, Thread* thread) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL) {
+PCB::PCB(StackSize size, Time quantum, Thread* thread) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(-1), lockFlag(0) {
 	lock
 	idcnt ++;
 	stack = new unsigned [size];
@@ -79,8 +79,10 @@ sp = FP_OFF(stack + size - 12);// Bilo 13 zbog novog lock unlock
 unlock*/
 
 PCB::~PCB() {
+	lock
 	if (stack != NULL)
 		delete[] (void*)stack;
+	unlock
 	/*size = 0;
 	sp = 0;
 	ss = 0;
@@ -92,13 +94,11 @@ void PCB::wrapper(){
 	running->threadPointer->run();
 
 	lock
+#ifdef DEBUG
 	cout << "THREAD FINNISHED" << endl;
-	unlock
-
-	//EXIT CODE
-	lock
+#endif
 	running->threadPointer->waitList->putAll();
-	exitThread();
 	unlock
+	exitThread();
 };
 
