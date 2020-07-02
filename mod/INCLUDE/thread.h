@@ -5,8 +5,11 @@
 #include "macros.h"
 #include "TList.h"
 #include "PCBList.h"
+#include "PCB.h"
 
 static volatile TList threadLista;
+
+extern void dispatch();
 
 class Thread {
 public:

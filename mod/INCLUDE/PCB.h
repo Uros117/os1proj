@@ -1,7 +1,8 @@
 #ifndef PCB_H_
 #define PCB_H_
 #include "macros.h"
-#include "thread.h"
+
+class Thread;
 
 class PCB {
 private:

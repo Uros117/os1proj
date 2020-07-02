@@ -9,8 +9,8 @@
 #include "ksem.h"
 #include "SemList.h"
 
-extern userMain(int argc, char* argv[]);
-
+extern userMain (int argc, char* argv[]);
+extern void tick ();
 unsigned oldTimerOFF, oldTimerSEG;
 
 void interrupt timer();
@@ -102,6 +102,7 @@ void put(PCB* pcb){
 }
 
 void interrupt timer(){
+	tick();
 	KernelSem::sem.update();
 	// TODO: ako je timeslice 0 onda thread treba da se izvrsava bez prekidanja do kraja
 	// ((!PCB::running->quantum == 0) && cntr <= 0) || context_switch_on_demand

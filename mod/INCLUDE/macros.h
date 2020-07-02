@@ -41,6 +41,8 @@ typedef unsigned int Time;// time, x 55ms const Time defaultTimeSlice = 2; // de
 typedef unsigned int ID;
 const StackSize defaultStackSize = 4096;
 const Time defaultTimeSlice = 20; // FIXME: ja dodao
+typedef unsigned char IVTNo;
+typedef void interrupt (*interrupt_t)(...);
 /*
 volatile unsigned int lvl = 0;
 
