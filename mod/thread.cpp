@@ -5,8 +5,10 @@
 #include "SCHEDULE.H"
 #include "hello.h"
 #include "PCBList.h"
+#include "ksignal.h"
 
 volatile ID Thread::idcnt = 1;
+volatile TList Thread::threadLista;
 
 void Thread::waitToComplete(){
 	lock
@@ -35,6 +37,10 @@ Thread::Thread (StackSize stackSize, Time timeSlice): id(idcnt), allreadyStarted
 	waitList = new PCBList();
 	myPCB = new PCB(stackSize, timeSlice, (Thread *)this);
 	threadLista.dodaj(this);
+
+	parentThread = PCB::running->threadPointer;
+
+	registerHandler (0, signal0handler);
 	unlock
 }
 
@@ -53,6 +59,7 @@ void Thread::start(){
 
 
 Thread::~Thread(){
+	waitToComplete();
 	lock
 #ifdef DEBUG_V
 	cout << "Thread delete" << endl;
@@ -75,4 +82,88 @@ Thread::~Thread(){
 	}
 	unlock*/
 	//delete myPCB;
+}
+
+void Thread::signal (SignalId signal) {
+	lock
+	if (signal >= SIGNALID_ERROR) {
+		unlock
+		return;
+	}
+	signalQueue.dodaj(signal);
+	unlock
+}
+
+void Thread::registerHandler (SignalId signal, SignalHandler handler) {
+	lock
+	if (signal >= SIGNALID_ERROR) {
+		unlock
+		return;
+	}
+	signals[signal].addHandler(handler);
+	unlock
+}
+
+void Thread::unregisterAllHandlers (SignalId id) {
+	lock
+	if (id >= SIGNALID_ERROR) {
+		unlock
+		return;
+	}
+	signals[id].removeAllHandlers();
+	unlock
+}
+
+void Thread::swap(SignalId id, SignalHandler hand1, SignalHandler hand2) {
+	lock
+	if (id >= SIGNALID_ERROR) {
+		unlock
+		return;
+	}
+	signals[id].swap(hand1, hand2);
+	unlock
+}
+
+void Thread::blockSignal (SignalId signal){
+	lock
+	if (signal >= SIGNALID_ERROR) {
+		unlock
+		return;
+	}
+	signals[signal].block();
+	unlock
+}
+
+void Thread::unblockSignal (SignalId signal){
+	lock
+	if (signal >= SIGNALID_ERROR) {
+		unlock
+		return;
+	}
+	signals[signal].unblock();
+	unlock
+}
+
+void Thread::blockSignalGlobally (SignalId signal) {
+	lock
+	Thread::glob_blocked = 1;
+	unlock
+}
+
+void Thread::unblockSignalGlobally (SignalId signal) {
+	lock
+	Thread::glob_blocked = 0;
+	unlock
+}
+
+void signal0handler () {
+	lock
+	//cout << "signal0" << endl;
+	PCB::running->threadPointer->signal(2);
+	if (PCB::running->threadPointer->parentThread)
+		PCB::running->threadPointer->parentThread->signal(1);
+
+	PCB::running->threadPointer->waitList->putAll();
+	unlock
+	exitThread();
 }

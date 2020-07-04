@@ -17,7 +17,7 @@
 //---------------------------------------------------------------------------//
 //  Otkomentarisati ukoliko se testiraju signali
 //---------------------------------------------------------------------------//
-// #define SIGNAL
+#define SIGNAL
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -26,7 +26,7 @@
 
 Time TIME_SLICE = 2;   // 0 ili defaultTimeSlice
 
-int N = 3;            // 1 <= N <= 19
+int N = 19;            // 1 <= N <= 19
 
 //---------------------------------------------------------------------------//
 
@@ -136,6 +136,7 @@ void signal1() {
 
 int userMain (int argc, char* argv[])
 {
+
 	BoundedBuffer *buff;
 	Consumer *con;
 	
@@ -155,6 +156,7 @@ int userMain (int argc, char* argv[])
 		intUnlock
 		return 1;
 	}
+
 
 #ifdef SIGNAL
 	Thread *current = Thread::getThreadById(Thread::getRunningId());

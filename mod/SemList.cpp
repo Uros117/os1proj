@@ -11,9 +11,9 @@
 #include "PCBTList.h"
 
 SemList::SemList() : head(NULL), tail(NULL) {
-	//lock
-	//cout << "test konstruktor" << endl;
-	//unlock
+	/*lock
+	cout << "semlist konstruktor" << endl;
+	unlock*/
 };
 
 void SemList::dodaj(KernelSem* ob)

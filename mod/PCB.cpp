@@ -94,6 +94,12 @@ void PCB::wrapper(){
 	running->threadPointer->run();
 
 	lock
+	PCB::running->threadPointer->signal(2);
+	if (PCB::running->threadPointer->parentThread) {
+		PCB::running->threadPointer->parentThread->signal(1);
+	}
+
+
 #ifdef DEBUG
 	cout << "THREAD FINNISHED" << endl;
 #endif

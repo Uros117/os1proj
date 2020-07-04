@@ -12,11 +12,11 @@ public:
 		Elem(Thread* info) : info(info), next(NULL) {};
 	};
 private:
-	Elem* head;
-	Elem* tail;
+	volatile Elem* head;
+	volatile Elem* tail;
 public:
 
-	TList() : head(NULL), tail(NULL) {};
+	TList();
 	~TList(){
 		brisiSve();
 	};

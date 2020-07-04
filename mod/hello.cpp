@@ -1,6 +1,7 @@
 #include <iostream.h>
 #include <DOS.H>
 #include <stdio.h>
+#include "hello.h"
 #include "macros.h"
 #include "PCB.h"
 #include "SCHEDULE.H"
@@ -8,6 +9,8 @@
 #include "ThreadB.h"
 #include "ksem.h"
 #include "SemList.h"
+#include "SIdList.h"
+#include "ksignal.h"
 
 extern userMain (int argc, char* argv[]);
 extern void tick ();
@@ -21,8 +24,11 @@ unsigned int tsp;
 unsigned int tss;
 unsigned int tbp;
 
+
+
 volatile PCB* PCB::running;
 volatile PCB* PCB::idlePCB;
+volatile int Thread::glob_blocked = 0;
 
 void initTimer(){
 	lock
@@ -77,6 +83,7 @@ void restore(){
 volatile int cntr = 20;
 volatile int context_switch_on_demand = 0;
 volatile int context_switch_without_return = 0;
+volatile int context_switch_disabled = 0;
 // Sinhrona promena konteksta
 void dispatch(){
 	lock
@@ -101,64 +108,110 @@ void put(PCB* pcb){
 	Scheduler::put(pcb);
 }
 
+
+SignalId temp = SIGNALID_ERROR;
+
 void interrupt timer(){
 	tick();
-	KernelSem::sem.update();
-	// TODO: ako je timeslice 0 onda thread treba da se izvrsava bez prekidanja do kraja
-	// ((!PCB::running->quantum == 0) && cntr <= 0) || context_switch_on_demand
-	if((!PCB::running->quantum == 0) || context_switch_on_demand)
-	{
-		if (!context_switch_on_demand) cntr--;
-		if (cntr <= 0 || context_switch_on_demand) {
-	#ifdef DEBUG
-			cout << PCB::running->id << " -> ";
-	#endif
-			asm {
-				mov tsp, sp
-				mov tss, ss
-				mov tbp, bp
-			}
-			PCB::running->sp = tsp;
-			PCB::running->ss = tss;
-			PCB::running->bp = tbp;
 
-			if(PCB::running->finished != 1) {
-				if(context_switch_without_return == 0){
-					Scheduler::put((PCB*)PCB::running);
-				}
-			};
-			PCB::running = Scheduler::get();
-
-			// Ako nema vise thread-ova u Scheduler-u
-			// posavi aktivan thread na main thread
-			// gde je HALT
-			if (PCB::running == 0){
-	#ifdef DEBUG_V
-				cout << "Thread queue is empty! ";
-	#endif
-				PCB::running = PCB::idlePCB;
-			}
-
-			// Ispisi promenu
-	#ifdef DEBUG
-			cout << PCB::running->id << endl;
-	#endif
-
-			tsp = PCB::running->sp;
-			tss = PCB::running->ss;
-			tbp = PCB::running->bp;
-
-			cntr = PCB::running->quantum;
-			asm {
-				mov sp, tsp
-				mov ss, tss
-				mov bp, tbp
-			}
-		}
-	}
 	// Prosledjivanje prekida DOS-u
 	if(!context_switch_on_demand) asm int 60h;
 
+	KernelSem::sem.update();
+
+	if (!context_switch_disabled) {// || context_switch_on_demand
+		// Signali
+		if (!Thread::glob_blocked && PCB::running->threadPointer) {//&& !context_switch_on_demand
+			context_switch_disabled = 1;
+			//cout << "signal check" << endl;
+			// pop context
+			/*asm {
+				pop es
+				pop ds
+				pop bp
+				pop di
+				pop si
+				pop dx
+				pop cx
+				pop bx
+				pop ax
+			}*/
+
+			// process signals
+			temp = PCB::running->threadPointer->signalQueue.getTop();
+			while (temp != SIGNALID_ERROR) {
+				PCB::running->threadPointer->signals[temp].update();
+
+				temp = PCB::running->threadPointer->signalQueue.getTop();
+			}
+
+			// push context
+			/*asm {
+				push ax
+				push bx
+				push cx
+				push dx
+				push si
+				push di
+				push bp
+				push ds
+				push es
+			}*/
+			context_switch_disabled = 0;
+		}
+
+		if((!PCB::running->quantum == 0) || context_switch_on_demand)
+		{
+			if (!context_switch_on_demand) cntr--;
+			if (cntr <= 0 || context_switch_on_demand) {
+		#ifdef DEBUG
+				cout << PCB::running->id << " -> ";
+		#endif
+				asm {
+					mov tsp, sp
+					mov tss, ss
+					mov tbp, bp
+				}
+				PCB::running->sp = tsp;
+				PCB::running->ss = tss;
+				PCB::running->bp = tbp;
+
+				if(PCB::running->finished != 1) {
+					if(context_switch_without_return == 0){
+						Scheduler::put((PCB*)PCB::running);
+					}
+				};
+				PCB::running = Scheduler::get();
+
+				// Ako nema vise thread-ova u Scheduler-u
+				// posavi aktivan thread na main thread
+				// gde je HALT
+				if (PCB::running == 0){
+		#ifdef DEBUG_V
+					cout << "Thread queue is empty! ";
+		#endif
+					PCB::running = PCB::idlePCB;
+				}
+
+				// Ispisi promenu
+		#ifdef DEBUG
+				cout << PCB::running->id << endl;
+		#endif
+
+				tsp = PCB::running->sp;
+				tss = PCB::running->ss;
+				tbp = PCB::running->bp;
+
+				cntr = PCB::running->quantum;
+				asm {
+					mov sp, tsp
+					mov ss, tss
+					mov bp, tbp
+				}
+			}
+		}
+
+	}
 	context_switch_without_return = 0;
 	context_switch_on_demand = 0;
 }
@@ -178,20 +231,34 @@ void idle() {
 	}
 	exitThread();
 }
+volatile int* argc;
+volatile char*** argv = 0;
 
+volatile int rezultat = -1;
+
+void MainThread::run() {
+	rezultat = userMain (*argc, (char**) *argv);
+}
 
 int main(int argc, char* argv[])
 {
 	lock
+	::argc = &argc;
+	::argv = &argv;
 	initTimer();
 	PCB::idlePCB = new PCB(1024, 10, &idle);
 	PCB::running = new PCB();
+
+	MainThread* mt = new MainThread();
 	unlock
 
-	int rezultat = userMain (argc, argv);
+	//int rezultat = userMain (argc, argv);
+	mt->start();
+	mt->waitToComplete();
 
 	lock
 	restore();
+	delete mt;
 	delete PCB::idlePCB;
 	delete PCB::running;
 	unlock

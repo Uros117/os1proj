@@ -6,10 +6,12 @@
 #include "TList.h"
 #include "PCBList.h"
 #include "PCB.h"
-
-static volatile TList threadLista;
+#include "ksignal.h"
+#include "SIdList.h"
 
 extern void dispatch();
+
+void signal0handler ();
 
 class Thread {
 public:
@@ -23,6 +25,17 @@ public:
 		if(id == 0) return NULL;// ID 0 je rezervisan za greske
 		return threadLista.getByID(id);
 	}
+	// SIGNALI
+	void signal (SignalId signal);
+
+	void registerHandler (SignalId signal, SignalHandler handler);
+	void unregisterAllHandlers (SignalId id);
+	void swap(SignalId id, SignalHandler hand1, SignalHandler hand2);
+
+	void blockSignal (SignalId signal);
+	static void blockSignalGlobally (SignalId signal);
+	void unblockSignal (SignalId signal);
+	static void unblockSignalGlobally (SignalId signal);
 
 protected:
 	friend class PCB;
@@ -30,12 +43,23 @@ protected:
 
 	Thread (StackSize stackSize = defaultStackSize, Time timeSlice = defaultTimeSlice);
 	virtual void run() {};
+
 private:
 	volatile ID id;
 	volatile static ID idcnt;
 	volatile int allreadyStarted;
 	volatile PCB* myPCB;
 	volatile PCBList* waitList;
+	static volatile TList threadLista;
+
+	friend void interrupt timer();
+	friend void signal0handler();
+
+	// SIGNALI
+	KernelSignal signals[16];
+	SIdList signalQueue;
+	volatile static int glob_blocked;
+	volatile Thread* parentThread;
 };
 
 #endif

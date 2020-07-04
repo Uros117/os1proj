@@ -3,13 +3,20 @@
 #include "thread.h"
 #include "TList.h"
 
+void TList::TList ()  : head(NULL), tail(NULL)
+{
+	/*lock
+	cout << "tlist konstruktor" << endl;
+	unlock*/
+};
 
 void TList::dodaj(Thread* ob)
 {
 	lock
+	//cout << "dodaj" << endl;
 	Elem* e = new Elem(ob);
-	if (head == NULL) head = e;
-	if (tail == NULL) tail = e;
+	if (!head) head = e;
+	if (!tail) tail = e;
 	else
 	{
 		tail->next = e;
@@ -21,8 +28,9 @@ void TList::dodaj(Thread* ob)
 void TList::brisiSve()
 {
 	lock
+	//cout << "brisem sve" << endl;
 	Elem* n;
-	for (Elem* t = head; t; t = n)
+	for (Elem* t = (TList::Elem*)head; t; t = n)
 	{
 		n = t->next;
 		// TODO: Moze doci do problema ako se brisu svi threadovi odmah.
@@ -39,7 +47,7 @@ int TList::getCount() const
 {
 	lock
 	int rez = 0;
-	for (Elem* t = head; t; t = t->next, ++rez);
+	for (Elem* t = (TList::Elem*)head; t; t = t->next, ++rez);
 	unlock
 	return rez;
 }
@@ -50,10 +58,10 @@ int TList::getCount() const
 void TList::brisi(ID id)
 {
 	lock
-	int cnt = getCount();
+	//cout << "brisi thread " << id << endl;
 	Elem* n = NULL;
 
-	for (Elem* t = head; t; t = t->next)
+	for (Elem* t = (TList::Elem*)head; t; t = t->next)
 	{
 		if (t->info->getId() == id)
 		{
@@ -77,7 +85,7 @@ void TList::brisi(ID id)
 Thread* TList::getByID(ID id)
 {
 	lock
-	for (Elem* t = head; t; t = t->next)
+	for (Elem* t = (TList::Elem*)head; t; t = t->next)
 	{
 		if (t->info->getId() == id)
 		{

@@ -12,7 +12,7 @@ typedef unsigned int ID;
 
 
 
-// vezve 5 slajd 22
+// vezbe 5 slajd 22
 // zabranjuje prekide -
 // na ovaj nacin opmogueno je
 // ugnezdavanje parova poziva lock-unlock
@@ -43,6 +43,11 @@ const StackSize defaultStackSize = 4096;
 const Time defaultTimeSlice = 20; // FIXME: ja dodao
 typedef unsigned char IVTNo;
 typedef void interrupt (*interrupt_t)(...);
+typedef unsigned SignalId;
+typedef void (*SignalHandler)();
+
+#define SIGNALID_ERROR ((SignalId)16)
+
 /*
 volatile unsigned int lvl = 0;
 
@@ -59,6 +64,7 @@ void unlockf(){
 	//nece ovde upasti ako je vec zakljucano
 	if(lvl == 0)
 		unlock
-}*/
+}
+*/
 
 #endif
