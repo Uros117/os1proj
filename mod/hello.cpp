@@ -112,12 +112,14 @@ void put(PCB* pcb){
 SignalId temp = SIGNALID_ERROR;
 
 void interrupt timer(){
-	tick();
+
+	if (!context_switch_on_demand) {
+		tick();
+		KernelSem::sem.update();
+	}
 
 	// Prosledjivanje prekida DOS-u
 	if(!context_switch_on_demand) asm int 60h;
-
-	KernelSem::sem.update();
 
 	if (!context_switch_disabled) {// || context_switch_on_demand
 		// Signali
@@ -125,17 +127,6 @@ void interrupt timer(){
 			context_switch_disabled = 1;
 			//cout << "signal check" << endl;
 			// pop context
-			/*asm {
-				pop es
-				pop ds
-				pop bp
-				pop di
-				pop si
-				pop dx
-				pop cx
-				pop bx
-				pop ax
-			}*/
 
 			// process signals
 			temp = PCB::running->threadPointer->signalQueue.getTop();
@@ -144,19 +135,6 @@ void interrupt timer(){
 
 				temp = PCB::running->threadPointer->signalQueue.getTop();
 			}
-
-			// push context
-			/*asm {
-				push ax
-				push bx
-				push cx
-				push dx
-				push si
-				push di
-				push bp
-				push ds
-				push es
-			}*/
 			context_switch_disabled = 0;
 		}
 

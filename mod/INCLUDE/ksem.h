@@ -21,26 +21,29 @@
 
 class KernelSem{
 public:
+	volatile static SemList sem;
+public:
 	KernelSem(unsigned short init = 1);
-	virtual ~KernelSem();
+	~KernelSem();
 	// wait(S)
 	// Ako je vrednost semafora S veca oid nule,
 	// ta vrednost se umanjuje za jedan: u suprotnom,
 	// proces mora da ceka sve dok S ne postane vece
 	// od nule, a tada se vrednost takodje umanjuje
 	// za jedan
-	virtual int wait(Time maxTimeToWait);
+	int wait(Time maxTimeToWait);
 	// signal(S)
 	// Vrednost semafora se uvecava za jedan
-	virtual int signal(int n = 0);
+	int signal(int n = 0);
 	int value() const {return val;}
+
+	void update();
 private:
 	friend SemList;
 	volatile int val;
 	volatile PCBTList timeBlocked;
 	volatile PCBTList segBlocked;
-public:
-	volatile static SemList sem;
+
 
 };
 

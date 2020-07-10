@@ -63,7 +63,7 @@ void PCBTList::brisi(ID id)
 		{
 			if (t->next == NULL)
 				tail = n;
-			if (!n)
+			if (n != NULL)
 				n->next = t->next;
 			else
 				head = t->next;
@@ -74,45 +74,9 @@ void PCBTList::brisi(ID id)
 		}
 		n = t;
 	}
-	unlock
-}
-volatile int x = 0;
-void PCBTList::update(){
-	// Uredjenost ove liste nebi mnogo pomoglo jer moramo da prodjemo
-	// kroz nju da bi smanjili vreme koje se ceka na izlaz
-	// Optimizacija bi bila u tome sto bi se manje menjali pointeri
-	// ali je onda dodavanje mnogo zahtevnije!!!
-	lock
-	//cout << "update " << ++x << endl;
-	for (ElemPCBT* t = head, *p = NULL; t; )
-	{
-		if(--(t->t) <= 0){
-			t->info->lastTimeUnbockedMsg = 0;
-			Scheduler::put((PCB*)t->info);
-			//cout << "izbacen elem" << endl;
-			// Izbaci element
-			ElemPCBT* next = t->next;
 
-
-			if (t->next == NULL)
-				tail = p;
-			if (p != NULL)
-				p->next = t->next;
-			else
-				head = t->next;
-
-			// P se nece menjati jer samo spustamo elemente za jedan pa
-			// past element uvek ostaje isti ako brisemo element
-			// i samo se menja ako ne brisemo element tj. idemo na sledeci;
-			delete t;
-			t = next;
-		} else {
-			// Propagiraj
-			p=t;
-			t = t->next;
-		}
-
-	}
+	if (head == NULL)
+		tail == NULL;
 	unlock
 }
 

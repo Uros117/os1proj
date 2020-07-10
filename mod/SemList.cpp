@@ -19,7 +19,6 @@ SemList::SemList() : head(NULL), tail(NULL) {
 void SemList::dodaj(KernelSem* ob)
 {
 	lock
-	//cout << "dodaj" << endl;
 	ElemSem* e = new ElemSem(ob);
 	if (!head) head = e;
 	if (!tail) tail = e;
@@ -90,10 +89,9 @@ void SemList::brisi(KernelSem* adr)
 
 void SemList::update(){
 	lock
-	//cout << (ElemSem*) head << endl;
 	for (ElemSem* t = (ElemSem*) head; t; t = t->next)
 	{
-		t->info->timeBlocked.update();
+		t->info->update();
 	}
 	unlock
 }

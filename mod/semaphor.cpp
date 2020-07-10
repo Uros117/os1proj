@@ -22,14 +22,16 @@ Semaphore::~Semaphore() {
 int Semaphore::wait (Time maxTimeToWait) {
 	lock
 	//cout << "WAIT" << endl;
-	myImpl->wait(maxTimeToWait);
+	int res = myImpl->wait(maxTimeToWait);
 	unlock
+	return res;
 }
 int Semaphore::signal(int n) {
 	lock
 	//cout << "SIGNAL" << endl;
-	myImpl->signal(n);
+	int res = myImpl->signal(n);
 	unlock
+	return res;
 }
 int Semaphore::val () const {
 	return myImpl->value();  // Returns the current value of the semaphore

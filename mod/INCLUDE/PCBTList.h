@@ -36,7 +36,6 @@ public:
 	int getCount() const;
 	void brisi(ID id);
 	PCB* getByID(ID id);
-	void update();
 };
 
 #endif /* INCLUDE_PCBTLIST_H_ */

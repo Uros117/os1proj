@@ -2,6 +2,7 @@
 #define MACROS_
 
 //#define DEBUG 1
+
 //#define DEBUG_V 1
 
 
@@ -40,7 +41,7 @@ typedef unsigned long StackSize;
 typedef unsigned int Time;// time, x 55ms const Time defaultTimeSlice = 2; // default = 2*55ms typedef int ID;
 typedef unsigned int ID;
 const StackSize defaultStackSize = 4096;
-const Time defaultTimeSlice = 20; // FIXME: ja dodao
+const Time defaultTimeSlice = 2; // FIXME: ja dodao
 typedef unsigned char IVTNo;
 typedef void interrupt (*interrupt_t)(...);
 typedef unsigned SignalId;
