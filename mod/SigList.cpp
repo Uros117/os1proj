@@ -64,7 +64,7 @@ void SigList::brisi(SignalHandler id)
 		{
 			if (t->next == NULL)
 				tail = n;
-			if (!n)
+			if (n != NULL)
 				n->next = t->next;
 			else
 				head = t->next;

@@ -72,7 +72,7 @@ void SemList::brisi(KernelSem* adr)
 		{
 			if (t->next == NULL)
 				tail = n;
-			if (!n)
+			if (n != NULL)
 				n->next = t->next;
 			else
 				head = t->next;

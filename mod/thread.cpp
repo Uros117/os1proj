@@ -9,6 +9,7 @@
 
 volatile ID Thread::idcnt = 1;
 volatile TList Thread::threadLista;
+volatile int Thread::glob_blocked[16] = {0};
 
 void Thread::waitToComplete(){
 	lock
@@ -40,7 +41,19 @@ Thread::Thread (StackSize stackSize, Time timeSlice): id(idcnt), allreadyStarted
 
 	parentThread = PCB::running->threadPointer;
 
-	registerHandler (0, signal0handler);
+	if (parentThread != NULL) {
+		for ( int i = 0; i < 16; i++){
+			if(parentThread->signals[i].blocked)
+				blockSignal(i);
+			for (SigList::ElemSig* t = (SigList::ElemSig*)parentThread->signals[i].handlers.head; t; t = t->next) {
+				registerHandler(i,t->info);
+			}
+		}
+	} else {
+		registerHandler (0, signal0handler);
+	}
+
+
 	unlock
 }
 
@@ -71,17 +84,6 @@ Thread::~Thread(){
 	myPCB->finished = 1;
 	delete myPCB;
 	unlock
-
-	/*int i;
-	int j;
-	lock
-	j = Thread::lista.getCount();
-	for(i = 0; i < j; i++){
-		if(lista[i].getId() == getId())
-			lista(i);
-	}
-	unlock*/
-	//delete myPCB;
 }
 
 void Thread::signal (SignalId signal) {
@@ -146,13 +148,13 @@ void Thread::unblockSignal (SignalId signal){
 
 void Thread::blockSignalGlobally (SignalId signal) {
 	lock
-	Thread::glob_blocked = 1;
+	Thread::glob_blocked[signal] = 1;
 	unlock
 }
 
 void Thread::unblockSignalGlobally (SignalId signal) {
 	lock
-	Thread::glob_blocked = 0;
+	Thread::glob_blocked[signal] = 0;
 	unlock
 }
 

@@ -57,8 +57,8 @@ private:
 
 	// SIGNALI
 	KernelSignal signals[16];
+	static volatile int glob_blocked[16];
 	SIdList signalQueue;
-	volatile static int glob_blocked;
 	volatile Thread* parentThread;
 };
 

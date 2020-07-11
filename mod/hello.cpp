@@ -27,7 +27,7 @@ unsigned int tbp;
 
 volatile PCB* PCB::running;
 volatile PCB* PCB::idlePCB;
-volatile int Thread::glob_blocked = 0;
+//volatile int Thread::glob_blocked = {0};
 
 void initTimer(){
 	lock
@@ -115,22 +115,22 @@ void interrupt timer(){
 	if (!context_switch_on_demand) {
 		tick();
 		KernelSem::sem.update();
+		// Prosledjivanje prekida DOS-u
+		asm int 60h;
 	}
-
-	// Prosledjivanje prekida DOS-u
-	if(!context_switch_on_demand) asm int 60h;
 
 	if (!context_switch_disabled) {// || context_switch_on_demand
 		// Signali
-		if (!Thread::glob_blocked && PCB::running->threadPointer) {//&& !context_switch_on_demand
+		if (PCB::running->threadPointer) {//&& !context_switch_on_demand
 			context_switch_disabled = 1;
-			//cout << "signal check" << endl;
+			// cout << "signal check" << endl;
 			// pop context
 
 			// process signals
 			temp = PCB::running->threadPointer->signalQueue.getTop();
 			while (temp != SIGNALID_ERROR) {
-				PCB::running->threadPointer->signals[temp].update();
+				if(!Thread::glob_blocked[temp])
+					PCB::running->threadPointer->signals[temp].update();
 
 				temp = PCB::running->threadPointer->signalQueue.getTop();
 			}
