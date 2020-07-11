@@ -6,7 +6,6 @@
 #include "PCB.h"
 #include "SCHEDULE.H"
 #include "thread.h"
-#include "ThreadB.h"
 #include "ksem.h"
 #include "SemList.h"
 #include "SIdList.h"
