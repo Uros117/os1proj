@@ -20,11 +20,15 @@ Event::~Event () {
 }
 
 void Event::wait () {
+	lock
 	myImpl->wait();
+	unlock
 }
 
 void Event::signal () {
+	lock
 	myImpl->signal();
+	unlock
 }
 
 

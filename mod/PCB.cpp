@@ -7,13 +7,13 @@
 
 volatile ID PCB::idcnt = 1;
 
-PCB::PCB() : stack(NULL), size(0), sp(0), ss(0), quantum(20), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(-1), lockFlag(0) {
+PCB::PCB() : stack(NULL), size(0), sp(0), ss(0), quantum(20), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(0), lockFlag(0) {
 	lock
 	idcnt ++;
 	unlock
 }
 
-PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(-1), lockFlag(0) {
+PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(0), lockFlag(0) {
 	lock
 	idcnt ++;
 	stack = new unsigned [size];
@@ -39,7 +39,7 @@ PCB::PCB(StackSize size, Time quantum, void(*body)()) : size(size), quantum(quan
 	unlock
 }
 
-PCB::PCB(StackSize size, Time quantum, Thread* thread) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(-1), lockFlag(0) {
+PCB::PCB(StackSize size, Time quantum, Thread* thread) : size(size), quantum(quantum), finished(0), id(idcnt), threadPointer(NULL), lastTimeUnbockedMsg(0), lockFlag(0) {
 	lock
 	idcnt ++;
 	stack = new unsigned [size];

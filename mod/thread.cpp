@@ -166,6 +166,7 @@ void signal0handler () {
 		PCB::running->threadPointer->parentThread->signal(1);
 
 	PCB::running->threadPointer->waitList->putAll();
+	PCB::running->finished = 1;
 	unlock
-	exitThread();
+	//exitThread();
 }

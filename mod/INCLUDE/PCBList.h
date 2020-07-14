@@ -20,8 +20,8 @@ public:
 		ElemPCB(PCB* info) : info(info), next(NULL) {};
 	};
 private:
-	ElemPCB* head;
-	ElemPCB* tail;
+	volatile ElemPCB* head;
+	volatile ElemPCB* tail;
 public:
 
 	PCBList() : head(NULL), tail(NULL) {};

@@ -19,9 +19,9 @@ public:
 	void wait();
 	void signal();
 
-	IVTNo no;
-	PCB* pcb;
-	KernelSem sem;
+	volatile IVTNo no;
+	volatile PCB* pcb;
+	volatile KernelSem sem;
 
 };
 

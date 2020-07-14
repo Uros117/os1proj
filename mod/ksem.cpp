@@ -40,27 +40,15 @@ int KernelSem::wait(Time maxTimeToWait){
 		return PCB::running->lastTimeUnbockedMsg;
 	}
 	// ubaci ga u normalan signal queue
-#ifdef DEBUG_SEM_V
-	cout << "dodao PCB" << PCB::running->id << " u segBlocked" << endl;
-#endif
 	segBlocked.dodaj((PCB *)PCB::running, maxTimeToWait);
 
 	if(maxTimeToWait != 0){
 		// ubaci ga i u time queue
-#ifdef DEBUG_SEM_V
-		cout << "dodao PCB" << PCB::running->id << " u timeBlocked" << endl;
-#endif
 		timeBlocked.dodaj((PCB *)PCB::running, maxTimeToWait);
 	}
-#ifdef DEBUG_SEM_V
-			//cout << "Blokirao PCB" << PCB::running->id << endl;
-#endif
 
 	suspend();
-
-#ifdef DEBUG_SEM_V
-			//cout << "Odblokirao PCB" << PCB::running->id << endl;
-#endif
+	//cout << "msg " << PCB::running->id << " " << PCB::running->lastTimeUnbockedMsg << endl;
 	// Podatak da li je odblokiran thread kroz vreme ili signal se cuva
 	// u samom PCB-u u latTimeUnblockedMsg
 	unlock
@@ -80,25 +68,40 @@ int KernelSem::signal(int n){
 		// povratna vrednost je broj odblokiranih
 		// niti
 
+
+
+
+
+		/*int i;
+		for (i = 0; i < n; ++i){
+			if (segBlocked.top() == NULL) break;
+			segBlocked.top()->info->lastTimeUnbockedMsg = 1;
+			Scheduler::put((PCB*)segBlocked.top()->info);
+			if(segBlocked.top()->max != 0) {
+				timeBlocked.brisi(segBlocked.top()->info->id);
+			}
+			segBlocked.brisi(segBlocked.top()->info->id);
+			++val;
+		}
+		if (n > i)
+			val += (n - i);
+		unlock
+		return i;*/
+
 		val += n;
 		int d = (segBlocked.getCount() > n)? n: segBlocked.getCount();
 
 		int i = 0;
-		for(PCBTList::ElemPCBT* t = segBlocked.head; t && i < d; t = segBlocked.head, i++){
+		for(PCBTList::ElemPCBT* t = (ElemPCBT*)segBlocked.head; t && i < d; t = (ElemPCBT*)segBlocked.head, i++){
 			t->info->lastTimeUnbockedMsg = 1;
+
 			if(t->max != 0) {
-#ifdef DEBUG_SEM_V
-				cout << "izbrisao PCB" << PCB::running->id << " u timeBlocked" << endl;
-#endif
 				timeBlocked.brisi(t->info->id);
 			}
 			Scheduler::put((PCB *) t->info);
 
 			segBlocked.head = t->next;
 			delete t;
-#ifdef DEBUG_SEM_V
-			cout << "izbrisao PCB" << PCB::running->id << " u segBlocked" << endl;
-#endif
 		}
 		if(segBlocked.head == NULL) {
 			segBlocked.tail = NULL;
@@ -130,29 +133,21 @@ void KernelSem::update(){
 
 	PCBTList::ElemPCBT* next = NULL;
 
-	for (PCBTList::ElemPCBT* t = timeBlocked.head; t != NULL; t = next)
+	for (PCBTList::ElemPCBT* t = (ElemPCBT*)timeBlocked.head; t != NULL; t = next)
 	{
-#ifdef DEBUG_SEM_UPDATE
-		cout << "update pcb" << t->info->id << " " << t->t << endl;
-#endif
 		t->t -= 1;
+		//cout << "update " << t->info->id << " " << t->t << endl;
+		next = t->next;
 		if(t->t <= 0){
+			++val;
 			t->info->lastTimeUnbockedMsg = 0;
 
 			Scheduler::put((PCB*)t->info);
 
-
-
 			segBlocked.brisi(t->info->id);
-#ifdef DEBUG_SEM_V
-			cout << "izbrisao PCB" << PCB::running->id << " iz segBlocked" << endl;
-#endif
 			timeBlocked.brisi(t->info->id);
-#ifdef DEBUG_SEM_V
-			cout << "izbrisao PCB" << PCB::running->id << " iz timeBlocked" << endl;
-#endif
 		}
-		next = t->next;
+
 	}
 	unlock
 }

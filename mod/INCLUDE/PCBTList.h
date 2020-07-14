@@ -24,12 +24,14 @@ public:
 	};
 private:
 	friend class KernelSem;
-	ElemPCBT* head;
-	ElemPCBT* tail;
+	volatile ElemPCBT* head;
+	volatile ElemPCBT* tail;
 public:
 
 	PCBTList() : head(NULL), tail(NULL) {};
 	~PCBTList();
+
+	ElemPCBT* top();
 
 	void dodaj(PCB* ob, Time t);
 	void brisiSve();

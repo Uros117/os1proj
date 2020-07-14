@@ -19,8 +19,8 @@ public:
 		ElemSig(SignalHandler info) : info(info), next(NULL) {};
 	};
 public:
-	ElemSig* head;
-	ElemSig* tail;
+	volatile ElemSig* head;
+	volatile ElemSig* tail;
 public:
 
 	SigList() : head(NULL), tail(NULL) {};

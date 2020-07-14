@@ -24,11 +24,16 @@ void PCBTList::dodaj(PCB* ob, Time t)
 	unlock
 }
 
+ElemPCBT* PCBTList::top () {
+
+	return (ElemPCBT*)head;
+}
+
 void PCBTList::brisiSve()
 {
 	lock
 	ElemPCBT* n;
-	for (ElemPCBT* t = head; t; t = n)
+	for (ElemPCBT* t = (ElemPCBT*)head; t; t = n)
 	{
 		n = t->next;
 		//delete t->info;
@@ -44,7 +49,7 @@ int PCBTList::getCount() const
 {
 	lock
 	int rez = 0;
-	for (ElemPCBT* t = head; t; t = t->next, ++rez);
+	for (ElemPCBT* t = (ElemPCBT*)head; t; t = t->next, ++rez);
 	unlock
 	return rez;
 }
@@ -57,7 +62,7 @@ void PCBTList::brisi(ID id)
 	lock
 	ElemPCBT* n = NULL;
 
-	for (ElemPCBT* t = head; t; t = t->next)
+	for (ElemPCBT* t = (ElemPCBT*)head; t; t = t->next)
 	{
 		if (t->info->id == id)
 		{
@@ -83,7 +88,7 @@ void PCBTList::brisi(ID id)
 PCB* PCBTList::getByID(ID id)
 {
 	lock
-	for (ElemPCBT* t = head; t; t = t->next)
+	for (ElemPCBT* t = (ElemPCBT*)head; t; t = t->next)
 	{
 		if (t->info->id == id)
 		{

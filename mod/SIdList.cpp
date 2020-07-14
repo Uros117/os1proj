@@ -17,7 +17,7 @@ SignalId SIdList::getTop () {
 		return SIGNALID_ERROR;
 	}
 	SignalId t = head->info;
-	ElemSId* temp = head;
+	ElemSId* temp = (ElemSId*)head;
 	head = head->next;
 	if (!head)
 		tail = NULL;
@@ -45,7 +45,7 @@ void SIdList::brisiSve()
 {
 	lock
 	ElemSId* n;
-	for (ElemSId* t = head; t; t = n)
+	for (ElemSId* t = (ElemSId*)head; t; t = n)
 	{
 		n = t->next;
 		//delete t->info;
@@ -61,7 +61,7 @@ int SIdList::getCount() const
 {
 	lock
 	int rez = 0;
-	for (ElemSId* t = head; t; t = t->next, ++rez);
+	for (ElemSId* t = (ElemSId*)head; t; t = t->next, ++rez);
 	unlock
 	return rez;
 }
@@ -75,7 +75,7 @@ void SIdList::brisi(SignalId id)
 	int cnt = getCount();
 	ElemSId* n = NULL;
 
-	for (ElemSId* t = head; t; t = t->next)
+	for (ElemSId* t = (ElemSId*)head; t; t = t->next)
 	{
 		if (t->info == id)
 		{

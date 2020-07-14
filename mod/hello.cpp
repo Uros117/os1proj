@@ -17,8 +17,6 @@ unsigned oldTimerOFF, oldTimerSEG;
 
 void interrupt timer();
 
-int nextThread;
-
 unsigned int tsp;
 unsigned int tss;
 unsigned int tbp;
@@ -27,7 +25,6 @@ unsigned int tbp;
 
 volatile PCB* PCB::running;
 volatile PCB* PCB::idlePCB;
-//volatile int Thread::glob_blocked = {0};
 
 void initTimer(){
 	lock
@@ -79,7 +76,7 @@ void restore(){
 	unlock
 }
 
-volatile int cntr = 20;
+volatile int cntr = defaultTimeSlice;
 volatile int context_switch_on_demand = 0;
 volatile int context_switch_without_return = 0;
 volatile int context_switch_disabled = 0;
@@ -92,8 +89,10 @@ void dispatch(){
 }
 
 void exitThread(){
+	lock
 	PCB::running->finished = 1;
 	dispatch();
+	unlock
 }
 
 void suspend(){
@@ -104,7 +103,9 @@ void suspend(){
 }
 
 void put(PCB* pcb){
+	lock
 	Scheduler::put(pcb);
+	unlock
 }
 
 
@@ -115,8 +116,6 @@ void interrupt timer(){
 	if (!context_switch_on_demand) {
 		tick();
 		KernelSem::sem.update();
-		// Prosledjivanje prekida DOS-u
-		asm int 60h;
 	}
 
 	if (!context_switch_disabled) {// || context_switch_on_demand
@@ -134,10 +133,10 @@ void interrupt timer(){
 
 				temp = PCB::running->threadPointer->signalQueue.getTop();
 			}
-			context_switch_disabled = 0;
+
 		}
 
-		if((!PCB::running->quantum == 0) || context_switch_on_demand)
+		if(PCB::running->quantum != 0 || context_switch_on_demand)
 		{
 			if (!context_switch_on_demand) cntr--;
 			if (cntr <= 0 || context_switch_on_demand) {
@@ -153,11 +152,13 @@ void interrupt timer(){
 				PCB::running->ss = tss;
 				PCB::running->bp = tbp;
 
-				if(PCB::running->finished != 1) {
-					if(context_switch_without_return == 0){
-						Scheduler::put((PCB*)PCB::running);
+				if (PCB::running != PCB::idlePCB) {
+					if(PCB::running->finished != 1) {
+						if(context_switch_without_return == 0){
+							Scheduler::put((PCB*)PCB::running);
+						}
 					}
-				};
+				}
 				PCB::running = Scheduler::get();
 
 				// Ako nema vise thread-ova u Scheduler-u
@@ -187,7 +188,11 @@ void interrupt timer(){
 				}
 			}
 		}
+		context_switch_disabled = 0;
+	}
 
+	if (!context_switch_on_demand) {
+		asm int 60h;
 	}
 	context_switch_without_return = 0;
 	context_switch_on_demand = 0;

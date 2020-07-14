@@ -28,7 +28,7 @@ void KernelSignal::update() {
 		unlock
 		return;
 	}
-	for (SigList::ElemSig* t = handlers.head; t; t = t->next) {
+	for (SigList::ElemSig* t = (ElemSig*)handlers.head; t; t = t->next) {
 		unlock_asm // odblokiraj prekide
 		t->info();
 		lock_asm // blokiraj prekide
@@ -54,7 +54,7 @@ void KernelSignal::swap(SignalHandler hand1, SignalHandler hand2) {
 	}
 	SigList::ElemSig* t1;
 	int found1 =  0;
-	for (t1 = handlers.head; t1; t1 = t1->next) {
+	for (t1 = (ElemSig*)handlers.head; t1; t1 = t1->next) {
 		if (t1->info == hand1) {
 			found1 = 1;
 			break;
@@ -67,7 +67,7 @@ void KernelSignal::swap(SignalHandler hand1, SignalHandler hand2) {
 
 	SigList::ElemSig* t2;
 	int found2 =  0;
-	for (t2 = handlers.head; t2; t2 = t2->next) {
+	for (t2 = (ElemSig*)handlers.head; t2; t2 = t2->next) {
 		if (t2->info == hand1) {
 			found2 = 1;
 			break;

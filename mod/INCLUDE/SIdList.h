@@ -21,8 +21,8 @@ public:
 	};
 public:
 
-	ElemSId* head;
-	ElemSId* tail;
+	volatile ElemSId* head;
+	volatile ElemSId* tail;
 public:
 
 	SIdList() : head(NULL), tail(NULL) {};

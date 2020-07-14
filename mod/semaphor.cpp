@@ -21,14 +21,14 @@ Semaphore::~Semaphore() {
 
 int Semaphore::wait (Time maxTimeToWait) {
 	lock
-	//cout << "WAIT" << endl;
+	//cout << "W" << endl;
 	int res = myImpl->wait(maxTimeToWait);
 	unlock
 	return res;
 }
 int Semaphore::signal(int n) {
 	lock
-	//cout << "SIGNAL" << endl;
+	//cout << "S" << endl;
 	int res = myImpl->signal(n);
 	unlock
 	return res;

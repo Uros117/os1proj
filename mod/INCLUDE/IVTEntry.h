@@ -13,7 +13,7 @@
 
 #define PREPAREENTRY(no,old)						\
 	void interrupt interrupt##no (...) {			\
-		KernelEv* ke = IVTEntry::get(no)->myEvent;	\
+		KernelEv* ke = (KernelEv*)IVTEntry::get(no)->myEvent;	\
 		if (ke) ke->signal();						\
 		if (old) {									\
 			IVTEntry::get(no)->oldRoutine();		\
@@ -27,14 +27,14 @@
 
 class IVTEntry {
 public:
-	static IVTEntry* table[256];
-	static IVTEntry* get (IVTNo no) { return table[no]; };
+	static volatile IVTEntry* table[256];
+	static IVTEntry* get (IVTNo no) { return (IVTEntry*)table[no]; };
 	IVTEntry(IVTNo no, interrupt_t f);
 	~IVTEntry();
-	KernelEv* myEvent;
-	IVTNo no;
-	interrupt_t newRoutine;
-	interrupt_t oldRoutine;
+	volatile KernelEv* myEvent;
+	volatile IVTNo no;
+	volatile interrupt_t newRoutine;
+	volatile interrupt_t oldRoutine;
 };
 
 /*extern void dispatch();

@@ -8,7 +8,7 @@
 #include "macros.h"
 #include "IVTEntry.h"
 
-IVTEntry* IVTEntry::table[] = {0};
+volatile IVTEntry* IVTEntry::table[] = {0};
 IVTEntry::IVTEntry (IVTNo no, interrupt_t f): no(no), newRoutine(f), myEvent(0) {
 	lock
 	table[no] = this;
@@ -21,8 +21,8 @@ IVTEntry::IVTEntry (IVTNo no, interrupt_t f): no(no), newRoutine(f), myEvent(0) 
 
 IVTEntry::~IVTEntry()
 {
-	setvect(no, oldRoutine);
 	lock
+	setvect(no, oldRoutine);
 	table[no] = 0;
 	unlock
 }

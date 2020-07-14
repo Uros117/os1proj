@@ -29,7 +29,7 @@ void PCBList::brisiSve()
 {
 	lock
 	ElemPCB* n;
-	for (ElemPCB* t = head; t; t = n)
+	for (ElemPCB* t = (ElemPCB*)head; t; t = n)
 	{
 		n = t->next;
 		//delete t->info;
@@ -45,7 +45,7 @@ int PCBList::getCount() const
 {
 	lock
 	int rez = 0;
-	for (ElemPCB* t = head; t; t = t->next, ++rez);
+	for (ElemPCB* t = (ElemPCB*)head; t; t = t->next, ++rez);
 	unlock
 	return rez;
 }
@@ -59,7 +59,7 @@ void PCBList::brisi(ID id)
 	int cnt = getCount();
 	ElemPCB* n = NULL;
 
-	for (ElemPCB* t = head; t; t = t->next)
+	for (ElemPCB* t = (ElemPCB*)head; t; t = t->next)
 	{
 		if (t->info->id == id)
 		{
@@ -83,7 +83,7 @@ void PCBList::brisi(ID id)
 PCB* PCBList::getByID(ID id)
 {
 	lock
-	for (ElemPCB* t = head; t; t = t->next)
+	for (ElemPCB* t = (ElemPCB*)head; t; t = t->next)
 	{
 		if (t->info->id == id)
 		{
@@ -98,7 +98,7 @@ PCB* PCBList::getByID(ID id)
 
 void PCBList::putAll(){
 	lock
-	for (ElemPCB* t = head; t; t = t->next)
+	for (ElemPCB* t = (ElemPCB*)head; t; t = t->next)
 	{
 		Scheduler::put((PCB*)t->info);
 	}

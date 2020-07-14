@@ -28,7 +28,7 @@ void SigList::brisiSve()
 {
 	lock
 	ElemSig* n;
-	for (ElemSig* t = head; t; t = n)
+	for (ElemSig* t = (ElemSig*)head; t; t = n)
 	{
 		n = t->next;
 		//delete t->info;
@@ -44,7 +44,7 @@ int SigList::getCount() const
 {
 	lock
 	int rez = 0;
-	for (ElemSig* t = head; t; t = t->next, ++rez);
+	for (ElemSig* t = (ElemSig*)head; t; t = t->next, ++rez);
 	unlock
 	return rez;
 }
@@ -58,7 +58,7 @@ void SigList::brisi(SignalHandler id)
 	int cnt = getCount();
 	ElemSig* n = NULL;
 
-	for (ElemSig* t = head; t; t = t->next)
+	for (ElemSig* t = (ElemSig*)head; t; t = t->next)
 	{
 		if (t->info == id)
 		{
